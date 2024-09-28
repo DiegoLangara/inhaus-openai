@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Recognition</title>
+</head>
+<body>
+
+<h1>Upload a Meal Image</h1>
+
+<form id="mealForm">
+    <label for="mealImage">Choose a meal image:</label>
+    <input type="file" id="mealImage" name="mealImage" accept="image/*" required><br><br>
+    
+    <label for="exportFormat">Choose export format:</label>
+    <select id="exportFormat" name="export">
+        <option value="json">JSON</option>
+        <option value="html">HTML</option>
+    </select><br><br>
+    
+    <button type="submit">Submit</button>
+</form>
+
+<div id="result"></div>
+
+<script>
+  document.getElementById('mealForm').addEventListener('submit', async function (event) {
+    event.preventDefault(); // Prevent default form submission
+
+    const mealImage = document.getElementById('mealImage').files[0]; // Get the image file
+    const exportFormat = document.getElementById('exportFormat').value; // Get the export format
+
+    if (!mealImage) {
+        alert('Please select an image.');
+        return;
+    }
+
+    const formData = new FormData(); // Create a new FormData object
+    formData.append('mealImage', mealImage);
+    formData.append('export', exportFormat);
+
+    try {
+        // Send the request using fetch
+        const response = await fetch('http://localhost:3000/recognize-meal', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error:', errorData);
+            alert(`There was an error processing your request: ${errorData.error}`);
+            return;
+        }
+
+        if (exportFormat === 'json') {
+            const jsonData = await response.json();
+            document.getElementById('result').innerText = JSON.stringify(jsonData, null, 2);
+        } else {
+            const htmlData = await response.text();
+            document.getElementById('result').innerHTML = htmlData;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('There was an error processing your request.');
+    }
+});
+
+</script>
+
+</body>
+</html>

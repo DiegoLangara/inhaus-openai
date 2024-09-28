@@ -1,11 +1,19 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
+const multer = require('multer');  // Multer for handling file uploads
+const fs = require('fs');
+const cors = require('cors');  // Import the cors package
+
 
 const app = express();
 const port = process.env.PORT || 3000;
+const upload = multer({ dest: 'uploads/' });  // Initialize multer
 
+
+app.use(cors());  // Enable CORS for all routes
 app.use(express.json());
+
 
 const apiKey = process.env.OPENAI_API_KEY;
 const spoonacularApiKey = process.env.SPOONACULAR_API_KEY;
@@ -52,6 +60,101 @@ const buildHtmlResponse = (data, caseType) => {
     }
     return '';
 };
+
+const buildMealRecognitionHtml = (data) => {
+    return `<h1>${data.name}</h1><p>${data.description}</p><h2>Recipe</h2><p>${data.recipe}</p><h2>Ingredients</h2><ul>${data.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}</ul>`;
+};
+
+// Helper function to encode the image in base64
+const encodeImage = (imagePath) => {
+    try {
+        return fs.readFileSync(imagePath, 'base64');
+    } catch (error) {
+        console.error('Error encoding image:', error.message);
+        return null;
+    }
+};
+
+// New POST route to handle meal recognition from image upload using GPT-4o-mini
+app.post('/recognize-meal', upload.single('mealImage'), async (req, res) => {
+    const exportFormat = req.body.export || 'json';
+    const imagePath = req.file.path;
+
+    try {
+        // Step 1: Encode the image in base64
+        const base64Image = encodeImage(imagePath);
+        if (!base64Image) {
+            return res.status(500).json({ success: false, error: 'Error encoding the image.' });
+        }
+
+        // Step 2: Send the image and prompt to OpenAI GPT-4o-mini
+        const openAiResponse = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+                model: 'gpt-4o-mini',
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            {
+                                type: 'text',
+                                text: 'What’s in this image?'
+                            },
+                            {
+                                type: 'image_url',
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Image}`
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 300,
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        const openAiData = openAiResponse.data.choices[0].message.content.split('\n').filter(line => line.trim());
+        const description = openAiData[0];
+        const recipe = openAiData.slice(1, openAiData.indexOf('Ingredients:')).join(' ');
+        const ingredients = openAiData.slice(openAiData.indexOf('Ingredients:') + 1);
+
+        const mealData = {
+            name: req.file.originalname,
+            description,
+            recipe,
+            ingredients,
+        };
+
+        // Step 3: Return the result in HTML or JSON format
+        if (exportFormat === 'html') {
+            const htmlResponse = buildMealRecognitionHtml(mealData);
+            res.setHeader('Content-Type', 'text/html');
+            return res.send(htmlResponse);
+        } else {
+            return res.json({ success: true, ...mealData });
+        }
+    } catch (error) {
+        // Log the full error in the Node.js console for detailed debugging
+        console.error('Error processing meal recognition:', error.response ? error.response.data : error.message);
+        
+        // Return a detailed error response to the frontend
+        return res.status(500).json({
+            success: false,
+            error: error.response ? error.response.data : error.message,
+            details: error.response ? JSON.stringify(error.response.data, null, 2) : null
+        });
+    } finally {
+        // Clean up the uploaded file
+        fs.unlinkSync(imagePath);
+    }
+});
+
 
 // GET route to handle meal suggestions or ingredient lists
 app.get('/ask', async (req, res) => {
