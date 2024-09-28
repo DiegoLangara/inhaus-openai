@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "axios": "^1.7.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "express": "^4.21.0",
     "openai": "^4.65.0"
   },
   "name": "openai",
@@ -13,5 +15,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DiegoLangara/inhaus-openai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DiegoLangara/inhaus-openai/issues"
+  },
+  "homepage": "https://github.com/DiegoLangara/inhaus-openai#readme",
   "description": ""
 }
