@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meal Recognition</title>
+    <title>Meal Recognition and Suggestion</title>
 </head>
 <body>
 
-<h1>Upload a Meal Image</h1>
+<h1>Meal Recognition & Meal Suggestion</h1>
 
 <form id="mealForm">
-    <label for="mealImage">Choose a meal image:</label>
+    <label for="operation">Choose Operation:</label>
+    <select id="operation" name="operation">
+        <option value="recognize-meal">Recognize a Meal</option>
+        <option value="fix-me-a-meal">Fix Me a Meal (from ingredients)</option>
+    </select><br><br>
+
+    <label for="mealImage">Choose an image: *</label>
     <input type="file" id="mealImage" name="mealImage" accept="image/*" required><br><br>
+    <label for="mealImage">Serving Adults:</label>
+    <input type="number" id="numAdults" name="numAdults" min="0" max="10" value="4" required><br><br>
+    <label for="mealImage">Serving children:</label>
+    <input type="number" id="numChildren" name="numChildren" min="0" max="10" value="0" required><br><br>
     
     <label for="exportFormat">Choose export format:</label>
     <select id="exportFormat" name="export">
@@ -28,6 +38,7 @@
   document.getElementById('mealForm').addEventListener('submit', async function (event) {
     event.preventDefault(); // Prevent default form submission
 
+    const operation = document.getElementById('operation').value; // Get the chosen operation
     const mealImage = document.getElementById('mealImage').files[0]; // Get the image file
     const exportFormat = document.getElementById('exportFormat').value; // Get the export format
 
@@ -39,10 +50,19 @@
     const formData = new FormData(); // Create a new FormData object
     formData.append('mealImage', mealImage);
     formData.append('export', exportFormat);
+    formData.append('numAdults', document.getElementById('numAdults').value);
+    formData.append('numChildren', document.getElementById('numChildren').value);
+    
 
     try {
+        // Set the correct endpoint URL based on the chosen operation
+        const domain = 'http://localhost:3000';
+        const url = operation === 'recognize-meal' ? '/api/recognize-meal' :'/api/fix-me-a-meal';
+        //concatenate domain and url
+        const doman = domain+url;
         // Send the request using fetch
-        const response = await fetch('http://localhost:3000/recognize-meal', {
+        alert(doman);
+        const response = await fetch(doman, {
             method: 'POST',
             body: formData,
         });
@@ -65,7 +85,7 @@
         console.error('Error:', error);
         alert('There was an error processing your request.');
     }
-});
+  });
 
 </script>
 
