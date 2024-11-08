@@ -16,7 +16,7 @@ const recognizeMeal = async (imagePath, numAdults, numChildren) => {
         totalAdults = 4;
         totalChildren = 0;
     }
-
+console.log('starting to recognize Meal');
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
             model: 'gpt-4o-mini',
