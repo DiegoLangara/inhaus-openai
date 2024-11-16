@@ -289,7 +289,7 @@ const processTranscription = async (transcription) => {
 
         return taskData;
     } catch (error) {
-        console.error('Error processing transcription:', error.message);
+        console.error('Error processing transcription:', error.response ? error.response.data : error.message);
         throw new Error('Failed to process transcription.');
     }
 };
