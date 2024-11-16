@@ -243,7 +243,59 @@ const processAudio = async (audioPath) => {
     }
 };
 
+const processTranscription = async (transcription) => {
+    try {
+        // Define default values
+        const defaultTask = {
+            Taskname: "Enter task name",
+            "StartDate and startTime": new Date().toISOString(),
+            "endDate and endTime": new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            repeat: "Never",
+            category: "",
+            "assign to": "",
+            points: 100,
+        };
+
+        // Use OpenAI's GPT model to extract structured data
+        const gptResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-4',
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are a helpful assistant that extracts task information from transcriptions.',
+                },
+                {
+                    role: 'user',
+                    content: `Extract the following information from this transcription: "${transcription}". If any information is missing, use the default values provided: ${JSON.stringify(defaultTask)}. Return the information in the following JSON format:
+                    {
+                        "Taskname": "String",
+                        "StartDate and startTime": "ISO 8601 Timestamp",
+                        "endDate and endTime": "ISO 8601 Timestamp",
+                        "repeat": "String (options: 'Never', 'Everyday', 'Every Week', 'Every 2 Weeks', 'Every Month', 'Every Year')",
+                        "category": "String",
+                        "assign to": "String",
+                        "points": Integer
+                    }`,
+                },
+            ],
+        }, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const taskData = JSON.parse(gptResponse.data.choices[0].message.content);
+
+        return taskData;
+    } catch (error) {
+        console.error('Error processing transcription:', error.message);
+        throw new Error('Failed to process transcription.');
+    }
+};
+
+
 // Function to suggest meals based on ingredients
 
 
-module.exports = { recognizeMeal, fixMeal, processAudio };
+module.exports = { recognizeMeal, fixMeal, processAudio, processTranscription };
