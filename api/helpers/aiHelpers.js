@@ -179,85 +179,71 @@ const fixMeal = async (imagePath, numAdults, numChildren) => {
 
 
 
-const fixMealWithIngredients = async (imagePath, numAdults, numChildren) => {
-    const imageBuffer = fs.readFileSync(imagePath);
-    const base64Image = imageBuffer.toString('base64');
-
-    let totalAdults = numAdults;
-    let totalChildren = numChildren;
-
-    if ((numAdults === undefined && numChildren === undefined) || (numAdults == "" && numChildren == "") || (numAdults == 0 && numChildren == 0)) {
-        totalAdults = 4;
-        totalChildren = 0;
-    }
-
+const processAudio = async (audioPath) => {
     try {
-        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-4o-mini',
+        const formData = new FormData();
+        formData.append('file', fs.createReadStream(audioPath));
+        formData.append('model', 'whisper-1');
+
+        const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${apiKey}`,
+            },
+        });
+
+        const transcription = response.data.text;
+
+        // Define default values
+        const defaultTask = {
+            Taskname: "Enter task name",
+            "StartDate and startTime": new Date().toISOString(),
+            "endDate and endTime": new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            repeat: "Never",
+            category: "",
+            "assign to": "",
+            points: 100,
+        };
+
+        // Use OpenAI's GPT model to extract structured data
+        const gptResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-4',
             messages: [
                 {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": `What’s in this image? please recognize if there are any ingredients that could be used to prepare a meal in the picture. If there are ingredients in the picture, please create a response in JSON format (please make sure it's valid JSON before replying), considering servings for ${totalAdults} adults and ${totalChildren} children, following this format:
-{
-  "isRecognized": "true/false depending on success or failure of processing the picture",
-  "hasIngredients": "true/false depending on if any ingredients were found in the picture",
-  "fullDescription": "FULL DESCRIPTION OF THE IMAGE BEING RECOGNIZED",
-  "ingredientsRecognized": [
-    { "name": "INGREDIENT NAME" }
-  ],
-  "mealSuggestions": [
-    {
-      "mealName": "NAME OF THE MEAL SUGGESTED",
-      "recipe": "RECIPE FOR THE MEAL SUGGESTED",
-      "ingredients": [
-        { "name": "INGREDIENT NAME", "qty": "QUANTITY BASED ON RECIPE", "note": "NOTE ABOUT THE INGREDIENT" }
-      ]
-    }
-  ]
-}`
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": `data:image/jpeg;base64,${base64Image}`,
-                                "detail": "low"
-                            }
-                        }
-                    ]
-                }
+                    role: 'system',
+                    content: 'You are a helpful assistant that extracts task information from transcriptions.',
+                },
+                {
+                    role: 'user',
+                    content: `Extract the following information from this transcription: "${transcription}". If any information is missing, use the default values provided: ${JSON.stringify(defaultTask)}. Return the information in the following JSON format:
+                    {
+                        "Taskname": "String",
+                        "StartDate and startTime": "ISO 8601 Timestamp",
+                        "endDate and endTime": "ISO 8601 Timestamp",
+                        "repeat": "String (options: 'Never', 'Everyday', 'Every Week', 'Every 2 Weeks', 'Every Month', 'Every Year')",
+                        "category": "String",
+                        "assign to": "String",
+                        "points": Integer
+                    }`,
+                },
             ],
         }, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+            },
         });
 
-        // Clean the mealData before parsing
-        let mealData = response.data.choices[0].message.content;
-        mealData = mealData.replace(/```json/g, '').replace(/```/g, '').trim();
-        console.log(mealData);
-        const parsedData = JSON.parse(mealData);
+        const taskData = JSON.parse(gptResponse.data.choices[0].message.content);
 
-        return {
-            response: parsedData,
-        };
+        return taskData;
     } catch (error) {
-        console.error('Error recognizing ingredients:', error.message);
-        return {
-            isRecognized: false,
-            hasIngredients: false,
-            fullDescription: '',
-            ingredientsRecognized: [],
-            mealSuggestions: []
-        };
+        console.error('Error processing audio:', error.message);
+        throw new Error('Failed to process audio.');
     }
 };
 
 // Function to suggest meals based on ingredients
 
 
-module.exports = { recognizeMeal, fixMeal };
+module.exports = { recognizeMeal, fixMeal, processAudio };
