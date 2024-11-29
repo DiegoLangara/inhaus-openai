@@ -39,8 +39,8 @@ console.log('starting to recognize Meal');
                                 "ingredients": [
                                     {
                                         "name": "INGREDIENT NAME",
-                                        "amount": "QUANTITY FOR THE INGREDIENT BASED ON RECIPE IN FLOAT NUMBER (0 FOR TO TASTE OR NONE)",
-                                        "unit": "UNIT USED FOR THE QUANTITY OF THE INGREDIENT BASED ON RECIPE (to taste if CANNOT BE MEASURED)",
+                                        "amount": "QUANTITY FOR THE INGREDIENT BASED ON RECIPE IN FLOAT NUMBER (0 if CANNOT BE MEASURED)",
+                                        "unit": "UNIT USED FOR THE QUANTITY OF THE INGREDIENT BASED ON RECIPE (to taste if CANNOT BE MEASURED or unit is 0)",
                                     }
                                 ]
                             }`
