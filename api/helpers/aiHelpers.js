@@ -32,15 +32,15 @@ console.log('starting to recognize Meal');
                                 "isMeal": "true/false depending on if any related food elements were found in the picture",
                                 "fullDescription": "FULL DESCRIPTION OF THE IMAGE BEING RECOGNIZED",
                                 "title": "PICK A NAME FOR THE MEAL RECOGNIZED",
-                                "recipe": "DETAIL THE RECIPE FOR THE MEAL RECOGNIZED STEP-BY-STEP",
+                                "recipe": [{step:"DETAILS THE RECIPE FOR THE MEAL RECOGNIZED STEP-BY-STEP as a step object within an array, one entry object for every step"}]
                                 "readyInMinutes": "AVERAGE TIME IN MINUTES TO PREPARE THE MEAL RECOGNIZED",
-                                "healthScore": "A HEALTH SCORE FOR THE MEAL RECOGNIZED (0-10) / 10",
+                                "healthScore": "A HEALTH SCORE FOR THE MEAL RECOGNIZED (0-100) / 100",
                                 "servings": "INTEGER NUMBER OR ADULTS CONSIDERED FOR THE RECIPE",
                                 "ingredients": [
                                     {
                                         "name": "INGREDIENT NAME",
-                                        "amount": "QUANTITY FOR THE INGREDIENT BASED ON RECIPE IN FLOAT NUMBER (0 if CANNOT BE MEASURED)",
-                                        "unit": "UNIT USED FOR THE QUANTITY OF THE INGREDIENT BASED ON RECIPE (to taste if CANNOT BE MEASURED or unit is 0)",
+                                        "amount": "QUANTITY FOR THE INGREDIENT BASED ON RECIPE IN FLOAT NUMBER (0 if the ingredient cannot be measured or is 'to taste')",
+                                        "unit": "UNIT USED FOR THE QUANTITY OF THE INGREDIENT BASED ON RECIPE ('to taste' if the ingredient cannot be measured)",
                                     }
                                 ]
                             }`
@@ -103,7 +103,7 @@ const fixMeal = async (imagePath, numAdults, numChildren) => {
         totalAdults = 4;
         totalChildren = 0;
     }
-
+    console.log('starting to recognize Ingredients to suggest a meal');
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
             model: 'gpt-4o-mini',
@@ -119,15 +119,15 @@ const fixMeal = async (imagePath, numAdults, numChildren) => {
                                 "isMeal": "true/false depending on if a meal could be made with the ingredients recognized",
                                 "fullDescription": "FULL DESCRIPTION OF THE IMAGE BEING RECOGNIZED",
                                 "title": "A NAME FOR THE MEAL SUGGESTED",
-                                "recipe": "DETAIL THE RECIPE FOR THE MEAL SUGGESTED STEP-BY-STEP",
+                                "recipe": [{step:"DETAILS THE RECIPE FOR THE MEAL RECOGNIZED STEP-BY-STEP as a step object within an array, one entry object for every step"}]
                                 "readyInMinutes": "AVERAGE TIME IN MINUTES TO PREPARE THE MEAL SUGGESTED",
-                                "healthScore": "A HEALTH SCORE FOR THE MEAL SUGGESTED (0-10) / 10",
+                                "healthScore": "A HEALTH SCORE FOR THE MEAL SUGGESTED (0-100) / 100",
                                 "servings": "INTEGER NUMBER OR ADULTS CONSIDERED FOR THE RECIPE",
                                 "ingredients": [
                                     {
                                         "name": "INGREDIENT NAME",
-                                        "amount": "QUANTITY FOR THE INGREDIENT BASED ON RECIPE IN FLOAT NUMBER (0 FOR TO TASTE OR NONE)",
-                                        "unit": "UNIT USED FOR THE QUANTITY OF THE INGREDIENT BASED ON RECIPE (to taste if CANNOT BE MEASURED)",
+                                        "amount": "QUANTITY FOR THE INGREDIENT BASED ON RECIPE IN FLOAT NUMBER (0 if the ingredient cannot be measured or is 'to taste')",
+                                        "unit": "UNIT USED FOR THE QUANTITY OF THE INGREDIENT BASED ON RECIPE ('to taste' if the ingredient cannot be measured)",
                                     }
                                 ]
                             }`

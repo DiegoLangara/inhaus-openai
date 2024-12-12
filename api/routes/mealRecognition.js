@@ -3,10 +3,11 @@ const multer = require('multer');
 const { recognizeMeal } = require('../helpers/aiHelpers');
 const fs = require('fs');
 const router = express.Router();
+const verifyJWT = require('../middleware/jwtMiddleware');
 
 const upload = multer({ dest: 'uploads/' });
 
-router.post('/recognize-meal', upload.single('mealImage'), async (req, res) => {
+router.post('/recognize-meal', verifyJWT, upload.single('mealImage'), async (req, res) => {
     const exportFormat = req.body.export || 'json';
     const imagePath = req.file.path;
     const numServings = req.body.numServings || 4;
@@ -16,14 +17,9 @@ router.post('/recognize-meal', upload.single('mealImage'), async (req, res) => {
         // Call the helper function to recognize the meal
         const result = await recognizeMeal(imagePath, numServings);
 
-        // Send the response based on requested format (HTML or JSON)
-        // if (exportFormat === 'html') {
-        //     const htmlResponse = `<h1>Meal Name: ${result.mealName}</h1><p>${result.recipe}</p>`;
-        //     res.setHeader('Content-Type', 'text/html');
-        //     return res.send(htmlResponse);
-        // } else {
+ 
             return res.json(result);
-  //      }
+ 
     } catch (error) {
         console.error('Error recognizing meal:', error.message);
         return res.status(500).json({ success: false, error: error.message });

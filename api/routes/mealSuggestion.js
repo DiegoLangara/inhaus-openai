@@ -4,10 +4,11 @@ const { fixMeal } = require('../helpers/aiHelpers');
 
 const fs = require('fs');
 const router = express.Router();
+const verifyJWT = require('../middleware/jwtMiddleware');
 
 const upload = multer({ dest: 'uploads/' });
 
-router.post('/suggest-meal', upload.single('mealImage'), async (req, res) => {
+router.post('/suggest-meal', verifyJWT, upload.single('mealImage'), async (req, res) => {
     const exportFormat = req.body.export || 'json';
     const imagePath = req.file.path;
     const numAdults = req.body.numAdults || 4;
